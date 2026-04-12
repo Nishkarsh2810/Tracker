@@ -300,7 +300,7 @@ canvas#weightChart{width:100% !important;height:110px !important;}
         <div class="header-name">Nishkarsh</div>
         <div class="streak-badge" id="header-streak" onclick="openCalModal()">🔥 0</div>
       </div>
-      <div class="header-tag">lean bulk · eggetarian · target 62 kg · <span id="sync-status" style="color:var(--accent2);">☁️ connecting…</span></div>
+      <div class="header-tag"><span id="goal-type-tag">lean bulk</span> · eggetarian · target <span id="goal-target-tag">62</span> kg · <span id="sync-status" style="color:var(--accent2);">☁️ connecting…</span></div>
     </div>
     <div class="date-area">
       <div class="date-pill" id="date-display" onclick="toggleDatePicker()">📅 Today</div>
@@ -383,10 +383,18 @@ canvas#weightChart{width:100% !important;height:110px !important;}
   </div>
 
   <div class="card">
-    <div class="card-title">Streaks <span style="font-size:9px;color:var(--dim);font-weight:400;text-transform:none;letter-spacing:0;">(tap 🔥 badge for calendar)</span></div>
+    <div class="card-title">Streak <span style="font-size:9px;color:var(--dim);font-weight:400;text-transform:none;letter-spacing:0;">(tap 🔥 badge for calendar)</span></div>
     <div class="streak-row">
-      <div class="streak-cell"><div class="streak-num" id="streak-pro">0</div><div class="streak-lbl">🥚 Protein</div><div class="streak-sub">days hitting 110g</div></div>
-      <div class="streak-cell"><div class="streak-num" id="streak-cal">0</div><div class="streak-lbl">🔥 Calories</div><div class="streak-sub">days hitting 2350</div></div>
+      <div class="streak-cell">
+        <div class="streak-num" id="streak-combined">0</div>
+        <div class="streak-lbl">🔥 Day streak</div>
+        <div class="streak-sub">cal + protein both hit</div>
+      </div>
+      <div class="streak-cell">
+        <div class="streak-num" id="streak-today-status" style="font-size:18px;">—</div>
+        <div class="streak-lbl">Today</div>
+        <div class="streak-sub" id="streak-today-sub">log meals to count</div>
+      </div>
     </div>
   </div>
 
@@ -394,12 +402,12 @@ canvas#weightChart{width:100% !important;height:110px !important;}
     <div class="card-title">Weight Journey</div>
     <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:4px;">
       <div><div class="dash-big" id="d-curweight">60.5 kg</div><div class="dash-sub"><span id="d-rem" style="color:var(--accent);font-weight:700;">1.5 kg</span> to target</div></div>
-      <div style="text-align:right;"><div style="font-size:10px;color:var(--dim);">Target</div><div style="font-size:20px;font-weight:700;color:var(--muted);">62.0 kg</div></div>
+      <div style="text-align:right;"><div style="font-size:10px;color:var(--dim);">Target</div><div id="d-target-display" style="font-size:20px;font-weight:700;color:var(--muted);">62.0 kg</div></div>
     </div>
     <div class="graph-wrap"><canvas id="weightChart"></canvas><div class="graph-hint" id="graph-hint">Log at least 2 weight entries to see your graph</div></div>
     <div class="graph-labels" id="graph-labels"></div>
     <div class="progress-track"><div class="progress-fill" id="d-wbar" style="width:0%"></div></div>
-    <div class="progress-labels"><span>60.5</span><span>62.0</span></div>
+    <div class="progress-labels"><span id="d-start-lbl">60.5</span><span id="d-target-lbl">62.0</span></div>
   </div>
 
   <div class="card">
@@ -448,6 +456,9 @@ canvas#weightChart{width:100% !important;height:110px !important;}
       <div class="input-wrap"><input type="number" id="f-carb" placeholder="Carb" min="0"/><span class="input-unit" style="right:5px;font-size:9px">g</span></div>
       <div class="input-wrap"><input type="number" id="f-fat" placeholder="Fat" min="0"/><span class="input-unit" style="right:5px;font-size:9px">g</span></div>
     </div>
+    <div style="margin-bottom:10px;">
+      <input type="text" id="f-tags" placeholder="Tags (optional, comma-separated: protein, carb)" style="font-size:12px;"/>
+    </div>
     <button class="btn-primary" onclick="addMeal()">+ Add to log</button>
     <button class="btn-outline" onclick="saveFoodToLibrary()" style="margin-top:8px;">📚 Save to library</button>
   </div>
@@ -473,14 +484,15 @@ canvas#weightChart{width:100% !important;height:110px !important;}
 <div id="water" class="section">
   <div class="card">
     <div class="card-title">Daily Water Intake</div>
-    <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:14px;">
+    <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:6px;">
       <div class="water-stat" id="w-stat">0.0L</div>
-      <div style="font-size:13px;color:var(--muted);">of 3.5L target</div>
+      <div style="font-size:13px;color:var(--muted);">of <span id="w-target-lbl">3.5</span>L target</div>
     </div>
+    <div id="w-achieved" style="display:none;font-size:12px;font-weight:600;color:var(--accent);margin-bottom:10px;">Target achieved ✅</div>
     <div class="progress-track" style="margin-bottom:16px;"><div class="progress-fill" id="w-bar-water" style="width:0%;background:linear-gradient(90deg,var(--accent2),var(--accent))"></div></div>
     <div style="font-size:12px;color:var(--muted);margin-bottom:12px;">Each glass = 250ml. Tap to fill, tap again to empty.</div>
     <div class="water-grid" id="water-cups"></div>
-    <div style="font-size:11px;color:var(--dim);margin-top:4px;">Aim 3–3.5L daily while on creatine.</div>
+    <div style="font-size:11px;color:var(--dim);margin-top:4px;">Aim 3–3.5L daily while on creatine. You can log beyond the target.</div>
   </div>
 </div>
 
@@ -512,13 +524,27 @@ canvas#weightChart{width:100% !important;height:110px !important;}
     <div style="font-size:11px;color:var(--dim);margin-top:8px;">Morning after washroom, before eating.</div>
   </div>
   <div class="card">
-    <div class="card-title">Progress to 62 kg</div>
+    <div class="card-title" id="ww-card-title">Progress to 62 kg</div>
     <div class="dash-big" id="ww-current">60.5 kg</div>
     <div class="dash-sub" id="ww-sub"><span style="color:var(--accent);font-weight:700;">1.5 kg</span> remaining</div>
     <div id="weight-trend-badge" style="margin-top:8px;"></div>
     <div class="progress-track"><div class="progress-fill" id="ww-bar" style="width:0%"></div></div>
-    <div class="progress-labels"><span>60.5</span><span>62.0</span></div>
+    <div class="progress-labels"><span id="ww-start-lbl">60.5</span><span id="ww-target-lbl">62.0</span></div>
     <div id="weekly-avg-weight" style="margin-top:10px;font-size:12px;color:var(--muted);"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Goal Settings</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+      <div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:5px;font-weight:600;">Goal type</div>
+        <input type="text" id="goal-type-input" placeholder="e.g. lean bulk" maxlength="30"/>
+      </div>
+      <div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:5px;font-weight:600;">Target weight (kg)</div>
+        <input type="number" id="goal-target-input" placeholder="62" min="30" max="200" step="0.5"/>
+      </div>
+    </div>
+    <button class="btn-primary" onclick="saveGoal()">Save goal</button>
   </div>
   <div class="card">
     <div class="card-title">History — tap to edit or delete</div>
@@ -646,7 +672,8 @@ const DOC_REF = db.collection('users').doc('nishkarsh');
 // but kept here as required so existing code still references it)
 // ============================================================
 const TARGETS={cal:2350,pro:110,carb:290,fat:65,water:14};
-const START=60.5,TARGET_W=62.0,WATER_ML=0.25;
+let START=60.5,TARGET_W=62.0; // overridden by goal from Firebase on load
+const WATER_ML=0.25;
 const STORE='nk_tracker_v4'; // kept unchanged — used only for migration check
 
 const DEFAULT_FOODS=[
@@ -785,7 +812,13 @@ async function initFirebase(){
       if(!allData.streaks) allData.streaks={pro:0,cal:0};
       if(!allData.foods)   allData.foods=DEFAULT_FOODS.map(f=>({...f}));
       if(!allData.recentFoods) allData.recentFoods=[];
+      if(!allData.goal)    allData.goal={type:'lean bulk',targetWeight:62};
+      if(allData.streak==null) allData.streak=0;
+      if(!allData.lastSuccessDate) allData.lastSuccessDate='';
       FOODS = allData.foods;
+      // Apply goal values to runtime vars
+      TARGET_W = allData.goal.targetWeight||62;
+      START    = allData.weights.length ? Math.min(...allData.weights.map(w=>w.w)) : (allData.goal.targetWeight||62);
 
       firestoreReady = true;   // now safe to save()
       setSyncStatus('☁️ synced','var(--accent)');
@@ -810,7 +843,12 @@ async function initFirebase(){
     if(!allData.streaks) allData.streaks={pro:0,cal:0};
     if(!allData.foods)   allData.foods=DEFAULT_FOODS.map(f=>({...f}));
     if(!allData.recentFoods) allData.recentFoods=[];
+    if(!allData.goal)    allData.goal={type:'lean bulk',targetWeight:62};
+    if(allData.streak==null) allData.streak=0;
+    if(!allData.lastSuccessDate) allData.lastSuccessDate='';
     FOODS = allData.foods;
+    TARGET_W = allData.goal.targetWeight||62;
+    START    = allData.weights.length ? Math.min(...allData.weights.map(w=>w.w)) : TARGET_W;
     firestoreReady = true;
     renderChips();
     renderAll();
@@ -869,14 +907,100 @@ function updateScore(){
 }
 
 // --- STREAKS ---
-function updateStreaks(){
+// --- STRICT STREAK SYSTEM ---
+// Streak counts ONLY when BOTH cal >= target AND protein >= target for a day.
+// Called after every meal update. Uses local date to avoid timezone drift.
+function checkAndUpdateStreak(){
+  const t=totals();
+  const todayStr=todayISO(); // local date YYYY-MM-DD
+  const bothMet=t.cal>=TARGETS.cal&&t.pro>=TARGETS.pro;
+
+  if(bothMet){
+    if(allData.lastSuccessDate===todayStr){
+      // Already counted today — do nothing, avoid double increment
+      return;
+    }
+    // Check if yesterday was the last success (consecutive)
+    const yesterday=new Date();
+    yesterday.setDate(yesterday.getDate()-1);
+    const yesterdayStr=dateToISO(yesterday);
+    if(allData.lastSuccessDate===yesterdayStr){
+      allData.streak=(allData.streak||0)+1;
+    } else {
+      // Gap or first time — reset to 1
+      allData.streak=1;
+    }
+    allData.lastSuccessDate=todayStr;
+    save(); // sync streak to Firebase
+  } else if(isToday()&&allData.lastSuccessDate!==todayStr){
+    // Today's goals not met and haven't been met yet today — if streak was from yesterday,
+    // we don't reset yet (day isn't over). Only reset if TODAY they previously had it and now removed.
+    // Safe: streak only resets when we detect a missed day on the NEXT day's first load.
+  }
+}
+
+// Recomputes streak count by scanning all logged days (used for header badge accuracy)
+// Also detects if yesterday was missed and resets streak accordingly
+function recalcStreakFromHistory(){
   const dates=Object.keys(allData).filter(k=>k.match(/^\d{4}-\d{2}-\d{2}$/)).sort().reverse();
-  let ps=0,cs=0;
-  for(const d of dates){const day=allData[d];if(!day||!day.meals)break;const t=day.meals.reduce((a,m)=>({cal:a.cal+m.cal,pro:a.pro+m.pro}),{cal:0,pro:0});if(t.pro>=TARGETS.pro)ps++;else break;}
-  for(const d of dates){const day=allData[d];if(!day||!day.meals)break;const t=day.meals.reduce((a,m)=>({cal:a.cal+m.cal,pro:a.pro+m.pro}),{cal:0,pro:0});if(t.cal>=TARGETS.cal*0.9)cs++;else break;}
-  document.getElementById('streak-pro').textContent=ps;
-  document.getElementById('streak-cal').textContent=cs;
-  document.getElementById('header-streak').textContent='🔥 '+Math.max(ps,cs);
+  let streak=0;
+  const todayStr=todayISO();
+
+  // Walk backwards from yesterday (today's data may still be in progress)
+  // If yesterday was missed, reset streak to 0
+  const yesterday=new Date();yesterday.setDate(yesterday.getDate()-1);
+  const yesterdayStr=dateToISO(yesterday);
+
+  // If lastSuccessDate is before yesterday, the streak is broken
+  if(allData.lastSuccessDate&&allData.lastSuccessDate<yesterdayStr){
+    if(allData.streak>0){
+      allData.streak=0;
+      allData.lastSuccessDate='';
+      save();
+    }
+  }
+
+  return allData.streak||0;
+}
+
+function updateStreaks(){
+  // First check if today's goals are met and update streak accordingly
+  if(isToday()) checkAndUpdateStreak();
+
+  // Recalc to catch missed days
+  const currentStreak=recalcStreakFromHistory();
+
+  // Update dashboard display
+  const el=document.getElementById('streak-combined');
+  if(el) el.textContent=currentStreak;
+
+  // Update header badge
+  const badge=document.getElementById('header-streak');
+  if(badge) badge.textContent='🔥 '+currentStreak;
+
+  // Today's status cell
+  const t=totals();
+  const bothMet=t.cal>=TARGETS.cal&&t.pro>=TARGETS.pro;
+  const calMet=t.cal>=TARGETS.cal;
+  const proMet=t.pro>=TARGETS.pro;
+  const hasSome=t.cal>0||t.pro>0;
+  const statusEl=document.getElementById('streak-today-status');
+  const subEl=document.getElementById('streak-today-sub');
+  if(statusEl&&subEl){
+    if(!hasSome){
+      statusEl.textContent='—';statusEl.style.color='var(--dim)';
+      subEl.textContent='log meals to count';
+    } else if(bothMet){
+      statusEl.textContent='✅';statusEl.style.color='var(--accent)';
+      subEl.textContent='both targets hit!';
+    } else {
+      const missing=[];
+      if(!calMet) missing.push((TARGETS.cal-Math.round(t.cal))+' kcal');
+      if(!proMet) missing.push((TARGETS.pro-Math.round(t.pro))+'g protein');
+      statusEl.textContent='⏳';statusEl.style.color='var(--amber)';
+      subEl.textContent='need '+missing.join(' + ');
+    }
+  }
 }
 
 // --- SMART MACRO HIGHLIGHT ---
@@ -1105,12 +1229,15 @@ function addMeal(){
   const pro=parseFloat(document.getElementById('f-pro').value)||0;
   const carb=parseFloat(document.getElementById('f-carb').value)||0;
   const fat=parseFloat(document.getElementById('f-fat').value)||0;
+  // Parse optional tags (comma-separated, trimmed, lowercased)
+  const tagsRaw=document.getElementById('f-tags').value;
+  const tags=tagsRaw?tagsRaw.split(',').map(t=>t.trim().toLowerCase()).filter(Boolean):[];
   const meal={name,cal,pro,carb,fat,ts:Date.now()};
+  if(tags.length) meal.tags=tags;
   getDayData(currentDate).meals.push(meal);
-  // Track in recents (no id for custom items — use name as key)
   addToRecents({id:'custom_'+name.toLowerCase().replace(/\s+/g,'_'),name,cal,pro,carb,fat});
   save();
-  ['f-name','f-cal','f-pro','f-carb','f-fat'].forEach(id=>document.getElementById(id).value='');
+  ['f-name','f-cal','f-pro','f-carb','f-fat','f-tags'].forEach(id=>document.getElementById(id).value='');
   vibrate(40);renderAll();showToast(name+' added ✓');
 }
 
@@ -1118,20 +1245,68 @@ function addMeal(){
 function saveFoodToLibrary(){
   const name=document.getElementById('f-name').value.trim();
   if(!name){showToast('Enter a food name first');return;}
-  // Duplicate check — case-insensitive
   const exists=FOODS.some(f=>f.name.toLowerCase()===name.toLowerCase());
   if(exists){showToast('"'+name+'" already in library');return;}
   const cal=parseFloat(document.getElementById('f-cal').value)||0;
   const pro=parseFloat(document.getElementById('f-pro').value)||0;
   const carb=parseFloat(document.getElementById('f-carb').value)||0;
   const fat=parseFloat(document.getElementById('f-fat').value)||0;
-  // Build food object matching DEFAULT_FOODS structure exactly
-  FOODS.push({id:genId(),name,cal,pro,carb,fat,unit:'custom',tags:[]});
-  save();           // syncs to Firebase
-  renderChips();    // chips update immediately
-  ['f-name','f-cal','f-pro','f-carb','f-fat'].forEach(id=>document.getElementById(id).value='');
+  // Parse tags from the shared f-tags field
+  const tagsRaw=document.getElementById('f-tags').value;
+  const tags=tagsRaw?tagsRaw.split(',').map(t=>t.trim().toLowerCase()).filter(Boolean):[];
+  FOODS.push({id:genId(),name,cal,pro,carb,fat,unit:'custom',tags});
+  save();
+  renderChips();
+  ['f-name','f-cal','f-pro','f-carb','f-fat','f-tags'].forEach(id=>document.getElementById(id).value='');
   vibrate(30);
   showToast('Saved to library ✓');
+}
+
+// --- GOAL SETTINGS ---
+function saveGoal(){
+  const type=document.getElementById('goal-type-input').value.trim();
+  const tw=parseFloat(document.getElementById('goal-target-input').value);
+  if(!type&&!tw){showToast('Enter goal type or target weight');return;}
+  if(!allData.goal) allData.goal={type:'lean bulk',targetWeight:62};
+  if(type) allData.goal.type=type;
+  if(tw&&tw>0) allData.goal.targetWeight=tw;
+  TARGET_W=allData.goal.targetWeight;
+  save();
+  updateGoalUI();
+  renderWeightSection();
+  renderDashboard();
+  // Clear inputs after save
+  document.getElementById('goal-type-input').value='';
+  document.getElementById('goal-target-input').value='';
+  showToast('Goal updated ✓');
+}
+
+// Updates all goal-related UI elements from allData.goal
+function updateGoalUI(){
+  const g=allData.goal||{type:'lean bulk',targetWeight:62};
+  const t=g.targetWeight||62;
+  const typ=g.type||'lean bulk';
+  // Header tag
+  const gtag=document.getElementById('goal-type-tag');
+  const ttag=document.getElementById('goal-target-tag');
+  if(gtag) gtag.textContent=typ;
+  if(ttag) ttag.textContent=t;
+  // Weight tab progress card title
+  const wct=document.getElementById('ww-card-title');
+  if(wct) wct.textContent='Progress to '+t+' kg';
+  // Progress bar labels
+  const curW=allData.weights&&allData.weights.length?allData.weights[allData.weights.length-1].w:t;
+  const startW=allData.weights&&allData.weights.length?Math.min(...allData.weights.map(w=>w.w)):t;
+  ['d-start-lbl','ww-start-lbl'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=startW.toFixed(1);});
+  ['d-target-lbl','ww-target-lbl'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=t.toFixed(1);});
+  // Dashboard target display
+  const dtd=document.getElementById('d-target-display');
+  if(dtd) dtd.textContent=t.toFixed(1)+' kg';
+  // Populate goal inputs with current values (so user sees what's set)
+  const gti=document.getElementById('goal-type-input');
+  const gtwi=document.getElementById('goal-target-input');
+  if(gti&&!gti.value) gti.placeholder=typ;
+  if(gtwi&&!gtwi.value) gtwi.placeholder=t;
 }
 
 // --- DASHBOARD ---
@@ -1155,7 +1330,7 @@ function renderDashboard(){
       <div style="font-size:14px;color:var(--accent);">${done?'✓':''}</div>
     </div>`;
   }).join('');
-  updateAlerts();updateScore();updateStreaks();updateMealInsight();renderWeightGraph();
+  updateAlerts();updateScore();updateStreaks();updateMealInsight();renderWeightGraph();updateGoalUI();
 }
 
 // --- WEIGHT GRAPH ---
@@ -1175,18 +1350,30 @@ function renderWeightGraph(){
 function glassSVG(filled){return `<svg class="glass-svg" width="32" height="38" viewBox="0 0 32 38" fill="none"><path d="M6 4 L4 36 L28 36 L26 4 Z" fill="${filled?'rgba(126,184,245,0.15)':'transparent'}" stroke="${filled?'#7eb8f5':'#464e66'}" stroke-width="1.8" stroke-linejoin="round"/>${filled?'<path d="M4.5 22 Q16 18 27.5 22 L28 36 L4 36 Z" fill="#7eb8f5" fill-opacity="0.85"/><path d="M4.5 22 Q16 19 27.5 22" stroke="#aaddff" stroke-width="1" fill="none" opacity="0.5"/>':'<path d="M9 29 Q16 27 23 29" stroke="#464e66" stroke-width="1" fill="none" opacity="0.5"/>'}</svg>`;}
 function renderWater(){
   const d=getDayData(currentDate);
-  document.getElementById('w-stat').textContent=(d.water*WATER_ML).toFixed(1)+'L';
-  document.getElementById('w-bar-water').style.width=Math.min(100,Math.round(d.water/TARGETS.water*100))+'%';
-  document.getElementById('water-cups').innerHTML=Array.from({length:14},(_,i)=>`<div class="glass-wrap" onclick="toggleCup(${i})">${glassSVG(i<d.water)}<div class="glass-lbl">${(i+1)*250}ml</div></div>`).join('');
+  const liters=(d.water*WATER_ML).toFixed(1);
+  const targetL=TARGETS.water*WATER_ML; // default 3.5L
+  const achieved=d.water*WATER_ML>=targetL;
+  document.getElementById('w-stat').textContent=liters+'L';
+  // Bar fills to 100% at target; stays full if exceeded (do not overflow)
+  document.getElementById('w-bar-water').style.width=Math.min(100,Math.round((d.water/TARGETS.water)*100))+'%';
+  // Target achieved badge
+  const ach=document.getElementById('w-achieved');
+  if(ach) ach.style.display=achieved?'block':'none';
+  // Target label
+  const tl=document.getElementById('w-target-lbl');
+  if(tl) tl.textContent=targetL.toFixed(1);
+  // Render glasses — always show enough glasses to log beyond target (20 = 5L)
+  const GLASS_COUNT=20;
+  document.getElementById('water-cups').innerHTML=Array.from({length:GLASS_COUNT},(_,i)=>`<div class="glass-wrap" onclick="toggleCup(${i})">${glassSVG(i<d.water)}<div class="glass-lbl">${((i+1)*250)}ml</div></div>`).join('');
 }
 function toggleCup(i){
   const d=getDayData(currentDate);
+  // Toggle: if clicking a filled glass, unfill from there; if clicking empty, fill up to there
   d.water=i<d.water?i:i+1;
-  if(d.water>0)lastWaterAlertTime=Date.now(); // dismiss water alert when they log water
+  if(d.water>0)lastWaterAlertTime=Date.now();
   save();renderWater();vibrate(20);
   document.getElementById('d-water-ring').textContent=(d.water*WATER_ML).toFixed(1)+'L';
   updateScore();
-  // hide water reminder if showing
   if(d.water>0)document.getElementById('alert-water-reminder').classList.remove('show');
 }
 
