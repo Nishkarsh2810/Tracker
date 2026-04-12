@@ -218,6 +218,22 @@ canvas#weightChart{width:100% !important;height:110px !important;}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 .collapse-btn{background:none;border:none;color:var(--muted);font-family:var(--body);font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:5px;padding:0;margin-bottom:10px;touch-action:manipulation;}
 .collapse-btn:active{color:var(--accent);}
+/* SEARCH */
+.search-wrap{position:relative;margin-bottom:13px;}
+.search-wrap input{padding-left:36px;}
+.search-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:14px;pointer-events:none;opacity:.5;}
+.search-dropdown{position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--surface);border:1px solid var(--border2);border-radius:12px;z-index:50;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,.4);display:none;}
+.search-dropdown.open{display:block;}
+.search-item{padding:11px 14px;font-size:13px;font-weight:500;cursor:pointer;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;touch-action:manipulation;}
+.search-item:last-child{border-bottom:none;}
+.search-item:active{background:var(--surface2);}
+.search-item-meta{font-size:11px;color:var(--muted);}
+.search-empty{padding:12px 14px;font-size:13px;color:var(--dim);}
+/* BROWSE MODAL */
+.browse-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:100;display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s;}
+.browse-modal-overlay.open{opacity:1;pointer-events:all;}
+.browse-modal-box{background:var(--surface);border:1px solid var(--border2);border-radius:20px 20px 0 0;padding:20px 20px 40px;width:100%;max-width:480px;transform:translateY(30px);transition:transform .25s ease;max-height:82vh;overflow-y:auto;}
+.browse-modal-overlay.open .browse-modal-box{transform:translateY(0);}
 </style>
 </head>
 <body>
@@ -404,6 +420,25 @@ canvas#weightChart{width:100% !important;height:110px !important;}
 
 <!-- MEALS -->
 <div id="meals" class="section">
+
+  <!-- 1. SEARCH BAR -->
+  <div class="card" style="margin-bottom:13px;">
+    <div class="card-title">Search Foods</div>
+    <div class="search-wrap" id="search-wrap">
+      <span class="search-icon">🔍</span>
+      <input type="text" id="food-search" placeholder="Type to search (e.g. egg, paneer…)" autocomplete="off"
+        oninput="searchFoods(this.value)" onfocus="searchFoods(this.value)" onblur="setTimeout(closeSearch,150)"/>
+      <div class="search-dropdown" id="search-dropdown"></div>
+    </div>
+  </div>
+
+  <!-- 2. RECENT FOODS -->
+  <div class="card" id="recent-foods-card">
+    <div class="card-title">Recent Foods</div>
+    <div id="recent-foods-chips"><div class="empty">No recent foods yet.</div></div>
+  </div>
+
+  <!-- 3. ADD CUSTOM ITEM -->
   <div class="card">
     <div class="card-title">Add Custom Item</div>
     <div style="margin-bottom:8px;"><input type="text" id="f-name" placeholder="Food name (e.g. Rajma 150g)"/></div>
@@ -414,11 +449,13 @@ canvas#weightChart{width:100% !important;height:110px !important;}
       <div class="input-wrap"><input type="number" id="f-fat" placeholder="Fat" min="0"/><span class="input-unit" style="right:5px;font-size:9px">g</span></div>
     </div>
     <button class="btn-primary" onclick="addMeal()">+ Add to log</button>
+    <button class="btn-outline" onclick="saveFoodToLibrary()" style="margin-top:8px;">📚 Save to library</button>
   </div>
-  <div class="card">
-    <div class="card-title">Quick Add</div>
-    <div id="chip-container"></div>
-  </div>
+
+  <!-- 4. BROWSE ALL FOODS -->
+  <button class="btn-outline" onclick="openBrowseModal()" style="margin-bottom:13px;">🗂 Browse all foods</button>
+
+  <!-- TODAY'S LOG -->
   <div class="card">
     <div class="card-title">Today's Log</div>
     <div id="meal-list"><div class="empty">Nothing logged yet.</div></div>
@@ -556,6 +593,17 @@ canvas#weightChart{width:100% !important;height:110px !important;}
 </div>
 
 </div>
+<!-- BROWSE ALL FOODS MODAL -->
+<div class="browse-modal-overlay" id="browse-modal" onclick="closeBrowseModal(event)">
+  <div class="browse-modal-box">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+      <div style="font-family:var(--display);font-size:20px;">All Foods</div>
+      <button onclick="closeBrowseModal()" style="background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer;padding:0 4px;">×</button>
+    </div>
+    <div id="browse-chip-container"></div>
+  </div>
+</div>
+
 <div id="toast" class="toast"></div>
 
 <!-- ============================================================
@@ -736,6 +784,7 @@ async function initFirebase(){
       if(!allData.weights) allData.weights=[];
       if(!allData.streaks) allData.streaks={pro:0,cal:0};
       if(!allData.foods)   allData.foods=DEFAULT_FOODS.map(f=>({...f}));
+      if(!allData.recentFoods) allData.recentFoods=[];
       FOODS = allData.foods;
 
       firestoreReady = true;   // now safe to save()
@@ -760,6 +809,7 @@ async function initFirebase(){
     if(!allData.weights) allData.weights=[];
     if(!allData.streaks) allData.streaks={pro:0,cal:0};
     if(!allData.foods)   allData.foods=DEFAULT_FOODS.map(f=>({...f}));
+    if(!allData.recentFoods) allData.recentFoods=[];
     FOODS = allData.foods;
     firestoreReady = true;
     renderChips();
@@ -953,14 +1003,23 @@ function renderMeals(){
         </div>
       </div>
       ${isEditing?`<div class="meal-edit-form">
+        ${m.basecal!=null?`
+        <div style="font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:.7px;margin-bottom:8px;font-weight:600;">Quantity</div>
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+          <button class="qty-btn" style="width:38px;height:38px;font-size:20px;" onclick="mealQtyChange(${i},-0.5)">−</button>
+          <div id="mei-qty-display-${i}" style="font-size:24px;font-weight:700;color:var(--accent);min-width:50px;text-align:center;">${(m.qty||1)}×</div>
+          <button class="qty-btn" style="width:38px;height:38px;font-size:20px;" onclick="mealQtyChange(${i},0.5)">+</button>
+          <div style="font-size:11px;color:var(--muted);line-height:1.4;" id="mei-macro-preview-${i}">${Math.round(m.cal)} kcal · ${+(m.pro).toFixed(1)}g pro</div>
+        </div>`:
+        `<div style="font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:.7px;margin-bottom:8px;font-weight:600;">Edit macros</div>
         <div class="input-grid4" style="margin-bottom:10px;">
           <div class="input-wrap"><input type="number" id="mei-cal" value="${m.cal.toFixed(0)}" placeholder="Cal"/><span class="input-unit" style="right:5px;font-size:9px">k</span></div>
           <div class="input-wrap"><input type="number" id="mei-pro" value="${m.pro.toFixed(1)}" placeholder="Pro" step="0.1"/><span class="input-unit" style="right:5px;font-size:9px">g</span></div>
           <div class="input-wrap"><input type="number" id="mei-carb" value="${m.carb.toFixed(1)}" placeholder="Carb" step="0.1"/><span class="input-unit" style="right:5px;font-size:9px">g</span></div>
           <div class="input-wrap"><input type="number" id="mei-fat" value="${m.fat.toFixed(1)}" placeholder="Fat" step="0.1"/><span class="input-unit" style="right:5px;font-size:9px">g</span></div>
-        </div>
+        </div>`}
         <div style="display:flex;gap:8px;">
-          <button class="btn-primary" style="flex:1;" onclick="saveMealEditInline(${i})">Save</button>
+          <button class="btn-primary" style="flex:1;" onclick="${m.basecal!=null?`saveMealQty(${i})`:`saveMealEditInline(${i})`}">Save</button>
           <button class="btn-sm" onclick="cancelMealEdit()">Cancel</button>
         </div>
       </div>`:''}
@@ -983,6 +1042,33 @@ function openMealEdit(i){
   }
 }
 function cancelMealEdit(){editingMealIdx=-1;renderMeals();}
+
+// Called by − / + buttons in the quantity editor
+function mealQtyChange(i, delta){
+  const d=getDayData(currentDate);
+  const m=d.meals[i];if(!m||m.basecal==null)return;
+  const current=m.qty||1;
+  const newQty=Math.max(0.5,+(current+delta).toFixed(1));
+  m.qty=newQty;
+  // Scale macros from base
+  m.cal=+(m.basecal*newQty).toFixed(1);
+  m.pro=+(m.basepro*newQty).toFixed(1);
+  m.carb=+(m.basecarb*newQty).toFixed(1);
+  m.fat=+(m.basefat*newQty).toFixed(1);
+  // Update name to reflect new qty
+  const suffix=newQty!==1?` ×${newQty}`:'';
+  m.name=(m.baseName||m.name.replace(/ ×[\d.]+$/,''))+suffix;
+  // Live-update the display without full re-render (no flicker)
+  const qd=document.getElementById('mei-qty-display-'+i);
+  const mp=document.getElementById('mei-macro-preview-'+i);
+  if(qd)qd.textContent=newQty+'×';
+  if(mp)mp.textContent=Math.round(m.cal)+' kcal · '+m.pro+'g pro';
+}
+
+// Save quantity edit (for meals that have base macros)
+function saveMealQty(i){
+  editingMealIdx=-1;save();vibrate(30);renderAll();showToast('Quantity updated ✓');
+}
 function saveMealEditInline(i){
   const d=getDayData(currentDate);
   const m=d.meals[i];if(!m)return;
@@ -1019,9 +1105,33 @@ function addMeal(){
   const pro=parseFloat(document.getElementById('f-pro').value)||0;
   const carb=parseFloat(document.getElementById('f-carb').value)||0;
   const fat=parseFloat(document.getElementById('f-fat').value)||0;
-  getDayData(currentDate).meals.push({name,cal,pro,carb,fat,ts:Date.now()});save();
+  const meal={name,cal,pro,carb,fat,ts:Date.now()};
+  getDayData(currentDate).meals.push(meal);
+  // Track in recents (no id for custom items — use name as key)
+  addToRecents({id:'custom_'+name.toLowerCase().replace(/\s+/g,'_'),name,cal,pro,carb,fat});
+  save();
   ['f-name','f-cal','f-pro','f-carb','f-fat'].forEach(id=>document.getElementById(id).value='');
   vibrate(40);renderAll();showToast(name+' added ✓');
+}
+
+// Save the current custom item fields permanently to the food library
+function saveFoodToLibrary(){
+  const name=document.getElementById('f-name').value.trim();
+  if(!name){showToast('Enter a food name first');return;}
+  // Duplicate check — case-insensitive
+  const exists=FOODS.some(f=>f.name.toLowerCase()===name.toLowerCase());
+  if(exists){showToast('"'+name+'" already in library');return;}
+  const cal=parseFloat(document.getElementById('f-cal').value)||0;
+  const pro=parseFloat(document.getElementById('f-pro').value)||0;
+  const carb=parseFloat(document.getElementById('f-carb').value)||0;
+  const fat=parseFloat(document.getElementById('f-fat').value)||0;
+  // Build food object matching DEFAULT_FOODS structure exactly
+  FOODS.push({id:genId(),name,cal,pro,carb,fat,unit:'custom',tags:[]});
+  save();           // syncs to Firebase
+  renderChips();    // chips update immediately
+  ['f-name','f-cal','f-pro','f-carb','f-fat'].forEach(id=>document.getElementById(id).value='');
+  vibrate(30);
+  showToast('Saved to library ✓');
 }
 
 // --- DASHBOARD ---
@@ -1191,8 +1301,107 @@ function deleteFood(id){
   FOODS=FOODS.filter(f=>f.id!==id);save();renderChips();renderFoodMgr();showToast('Food removed');
 }
 
-// --- CHIPS (GROUPED) ---
+// --- RECENT FOODS ---
+// Adds a food to the top of recentFoods (max 6, no duplicates by id)
+function addToRecents(food){
+  if(!allData.recentFoods) allData.recentFoods=[];
+  // Remove existing entry with same id (move-to-top logic)
+  allData.recentFoods=allData.recentFoods.filter(f=>f.id!==food.id);
+  // Add to front
+  allData.recentFoods.unshift({id:food.id,name:food.name,cal:food.cal,pro:food.pro,carb:food.carb||0,fat:food.fat||0,unit:food.unit||''});
+  // Trim to 6
+  if(allData.recentFoods.length>6) allData.recentFoods=allData.recentFoods.slice(0,6);
+}
+
+function renderRecentFoods(){
+  const el=document.getElementById('recent-foods-chips');
+  if(!el)return;
+  const recents=allData.recentFoods||[];
+  if(!recents.length){el.innerHTML='<div class="empty">No recent foods yet.</div>';return;}
+  el.innerHTML='<div class="chips">'+recents.map(f=>`<button class="chip" onclick="openModalByRecent('${f.id}')">${f.name}</button>`).join('')+'</div>';
+}
+
+// Opens the qty modal for a recent food — looks up by id in FOODS first,
+// falls back to the stored recent data for custom items not in FOODS
+function openModalByRecent(id){
+  // Try to find in FOODS library first (has full data)
+  const f=FOODS.find(x=>x.id===id);
+  if(f){openModalById(id);return;}
+  // Custom item — use data stored in recents
+  const r=(allData.recentFoods||[]).find(x=>x.id===id);
+  if(!r)return;
+  modalItem={id:r.id,name:r.name,cal:r.cal,pro:r.pro,carb:r.carb||0,fat:r.fat||0,unit:r.unit||'custom'};
+  modalQty=1;
+  document.getElementById('modal-title').textContent=r.name;
+  document.getElementById('modal-sub').textContent='Per serving'+(r.unit?': '+r.unit:'');
+  updateModalDisplay();
+  document.getElementById('modal').classList.add('open');
+}
+
+// --- SEARCH ---
+function searchFoods(q){
+  const dd=document.getElementById('search-dropdown');
+  if(!q||!q.trim()){dd.classList.remove('open');return;}
+  const term=q.trim().toLowerCase();
+  const matches=FOODS.filter(f=>f.name.toLowerCase().includes(term)).slice(0,8);
+  if(!matches.length){
+    dd.innerHTML='<div class="search-empty">No match found</div>';
+  } else {
+    dd.innerHTML=matches.map(f=>`
+      <div class="search-item" onclick="openModalById('${f.id}')">
+        <span>${f.name}</span>
+        <span class="search-item-meta">${f.cal} kcal · ${f.pro}g pro</span>
+      </div>`).join('');
+  }
+  dd.classList.add('open');
+}
+
+function closeSearch(){
+  const dd=document.getElementById('search-dropdown');
+  if(dd) dd.classList.remove('open');
+  const inp=document.getElementById('food-search');
+  if(inp) inp.value='';
+}
+
+// --- BROWSE ALL FOODS MODAL ---
+function openBrowseModal(){
+  // Render all chips (grouped) inside the browse modal
+  const groups=[
+    {label:'🥚 Protein',tag:'protein'},
+    {label:'🍚 Carbs',tag:'carb'},
+    {label:'🥜 Fats',tag:'fat'},
+  ];
+  const tagged=new Set();
+  let html='';
+  for(const g of groups){
+    const foods=FOODS.filter(f=>f.tags&&f.tags.includes(g.tag)).sort((a,b)=>a.name.localeCompare(b.name));
+    if(!foods.length)continue;
+    foods.forEach(f=>tagged.add(f.id));
+    html+=`<div class="chip-group"><div class="chip-group-label">${g.label}</div><div class="chips">${foods.map(f=>`<button class="chip" onclick="openModalFromBrowse('${f.id}')">${f.name}</button>`).join('')}</div></div>`;
+  }
+  const others=FOODS.filter(f=>!tagged.has(f.id)).sort((a,b)=>a.name.localeCompare(b.name));
+  if(others.length)html+=`<div class="chip-group"><div class="chip-group-label">🍽 Others</div><div class="chips">${others.map(f=>`<button class="chip" onclick="openModalFromBrowse('${f.id}')">${f.name}</button>`).join('')}</div></div>`;
+  document.getElementById('browse-chip-container').innerHTML=html;
+  document.getElementById('browse-modal').classList.add('open');
+}
+
+function closeBrowseModal(e){
+  if(!e||e.target===document.getElementById('browse-modal'))
+    document.getElementById('browse-modal').classList.remove('open');
+}
+
+// Opens qty modal from browse and closes browse modal first
+function openModalFromBrowse(id){
+  document.getElementById('browse-modal').classList.remove('open');
+  openModalById(id);
+}
+
+// --- CHIPS (used only internally by renderChips — kept for Settings tab compatibility) ---
 function renderChips(){
+  // chip-container no longer exists in main UI (chips moved to browse modal)
+  // This function is kept for compatibility — renderRecentFoods handles the meals tab
+  const el=document.getElementById('chip-container');
+  if(!el)return; // gracefully skip — browse modal renders its own chips via openBrowseModal
   const groups=[
     {label:'🥚 Protein',tag:'protein'},
     {label:'🍚 Carbs',tag:'carb'},
@@ -1208,7 +1417,7 @@ function renderChips(){
   }
   const others=FOODS.filter(f=>!tagged.has(f.id)).sort((a,b)=>a.name.localeCompare(b.name));
   if(others.length) html+=`<div class="chip-group"><div class="chip-group-label">🍽 Others</div><div class="chips">${others.map(f=>`<button class="chip" onclick="openModalById('${f.id}')">${f.name}</button>`).join('')}</div></div>`;
-  document.getElementById('chip-container').innerHTML=html;
+  el.innerHTML=html;
 }
 
 // --- QTY MODAL ---
@@ -1229,8 +1438,25 @@ function changeQty(d){modalQty=Math.max(.5,+(modalQty+d).toFixed(1));updateModal
 function confirmQty(){
   if(!modalItem)return;
   const suffix=modalQty!==1?` ×${modalQty}`:'';
-  getDayData(currentDate).meals.push({name:modalItem.name+suffix,cal:modalItem.cal*modalQty,pro:modalItem.pro*modalQty,carb:modalItem.carb*modalQty,fat:modalItem.fat*modalQty,ts:Date.now()});
-  save();vibrate(40);closeModal();renderAll();showToast(modalItem.name+' added ✓');
+  // Store base macros + qty so quantity can be re-edited later from the log
+  getDayData(currentDate).meals.push({
+    name:modalItem.name+suffix,
+    cal:modalItem.cal*modalQty,
+    pro:modalItem.pro*modalQty,
+    carb:modalItem.carb*modalQty,
+    fat:modalItem.fat*modalQty,
+    ts:Date.now(),
+    basecal:modalItem.cal,
+    basepro:modalItem.pro,
+    basecarb:modalItem.carb,
+    basefat:modalItem.fat,
+    baseName:modalItem.name,
+    qty:modalQty
+  });
+  save();vibrate(40);closeModal();
+  // Track in recents using the base food item (not the scaled version)
+  addToRecents({id:modalItem.id,name:modalItem.name,cal:modalItem.cal,pro:modalItem.pro,carb:modalItem.carb,fat:modalItem.fat,unit:modalItem.unit||''});
+  renderAll();showToast(modalItem.name+' added ✓');
 }
 function closeModal(e){if(!e||e.target===document.getElementById('modal'))document.getElementById('modal').classList.remove('open');}
 
@@ -1315,6 +1541,7 @@ function showToast(msg){const t=document.getElementById('toast');t.textContent=m
 function renderAll(){
   updateHeader();renderMeals();renderDashboard();
   renderWater();renderSupps();renderWeightSection();renderWeekly();
+  renderRecentFoods();
 }
 function switchTab(tab,btn){
   document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
