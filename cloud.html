@@ -383,22 +383,6 @@ canvas#weightChart{width:100% !important;height:110px !important;}
   </div>
 
   <div class="card">
-    <div class="card-title">Streak <span style="font-size:9px;color:var(--dim);font-weight:400;text-transform:none;letter-spacing:0;">(tap 🔥 badge for calendar)</span></div>
-    <div class="streak-row">
-      <div class="streak-cell">
-        <div class="streak-num" id="streak-combined">0</div>
-        <div class="streak-lbl">🔥 Day streak</div>
-        <div class="streak-sub">cal + protein both hit</div>
-      </div>
-      <div class="streak-cell">
-        <div class="streak-num" id="streak-today-status" style="font-size:18px;">—</div>
-        <div class="streak-lbl">Today</div>
-        <div class="streak-sub" id="streak-today-sub">log meals to count</div>
-      </div>
-    </div>
-  </div>
-
-  <div class="card">
     <div class="card-title">Weight Journey</div>
     <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:4px;">
       <div><div class="dash-big" id="d-curweight">60.5 kg</div><div class="dash-sub"><span id="d-rem" style="color:var(--accent);font-weight:700;">1.5 kg</span> to target</div></div>
@@ -449,15 +433,39 @@ canvas#weightChart{width:100% !important;height:110px !important;}
   <!-- 3. ADD CUSTOM ITEM -->
   <div class="card">
     <div class="card-title">Add Custom Item</div>
-    <div style="margin-bottom:8px;"><input type="text" id="f-name" placeholder="Food name (e.g. Rajma 150g)"/></div>
+    <div style="margin-bottom:8px;"><input type="text" id="f-name" placeholder="Food name (e.g. Paneer bhurji)"/></div>
+    <!-- Base quantity for FIX 4: grams/ml reference -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+      <div>
+        <div style="font-size:10px;color:var(--dim);margin-bottom:4px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;">Base quantity (optional)</div>
+        <input type="number" id="f-baseqty" placeholder="e.g. 100" min="0"/>
+      </div>
+      <div>
+        <div style="font-size:10px;color:var(--dim);margin-bottom:4px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;">Unit</div>
+        <select id="f-unit" style="background:var(--surface2);border:1px solid var(--border2);border-radius:9px;color:var(--text);font-family:var(--body);font-size:13px;padding:9px 12px;width:100%;outline:none;">
+          <option value="g">g</option>
+          <option value="ml">ml</option>
+          <option value="piece">piece</option>
+        </select>
+      </div>
+    </div>
+    <div style="font-size:10px;color:var(--dim);margin-bottom:5px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;">Macros per base quantity</div>
     <div class="input-grid4">
       <div class="input-wrap"><input type="number" id="f-cal" placeholder="Cal" min="0"/><span class="input-unit" style="right:5px;font-size:9px">k</span></div>
       <div class="input-wrap"><input type="number" id="f-pro" placeholder="Pro" min="0"/><span class="input-unit" style="right:5px;font-size:9px">g</span></div>
       <div class="input-wrap"><input type="number" id="f-carb" placeholder="Carb" min="0"/><span class="input-unit" style="right:5px;font-size:9px">g</span></div>
       <div class="input-wrap"><input type="number" id="f-fat" placeholder="Fat" min="0"/><span class="input-unit" style="right:5px;font-size:9px">g</span></div>
     </div>
-    <div style="margin-bottom:10px;">
-      <input type="text" id="f-tags" placeholder="Tags (optional, comma-separated: protein, carb)" style="font-size:12px;"/>
+    <!-- FIX 2: Clickable tag chips instead of text input -->
+    <div style="margin-bottom:12px;">
+      <div style="font-size:10px;color:var(--dim);margin-bottom:6px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;">Tags (optional)</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;" id="custom-tag-selector">
+        <button class="chip custom-tag-chip" data-tag="protein" onclick="toggleCustomTag(this)">🥚 protein</button>
+        <button class="chip custom-tag-chip" data-tag="cal" onclick="toggleCustomTag(this)">🔥 cal</button>
+        <button class="chip custom-tag-chip" data-tag="carb" onclick="toggleCustomTag(this)">🌾 carb</button>
+        <button class="chip custom-tag-chip" data-tag="fat" onclick="toggleCustomTag(this)">🫒 fat</button>
+        <button class="chip custom-tag-chip" data-tag="sweet" onclick="toggleCustomTag(this)">🍬 sweet</button>
+      </div>
     </div>
     <button class="btn-primary" onclick="addMeal()">+ Add to log</button>
     <button class="btn-outline" onclick="saveFoodToLibrary()" style="margin-top:8px;">📚 Save to library</button>
@@ -486,13 +494,18 @@ canvas#weightChart{width:100% !important;height:110px !important;}
     <div class="card-title">Daily Water Intake</div>
     <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:6px;">
       <div class="water-stat" id="w-stat">0.0L</div>
-      <div style="font-size:13px;color:var(--muted);">of <span id="w-target-lbl">3.5</span>L target</div>
+      <div style="font-size:13px;color:var(--muted);">/ <span id="w-target-lbl">3.5</span>L target</div>
     </div>
     <div id="w-achieved" style="display:none;font-size:12px;font-weight:600;color:var(--accent);margin-bottom:10px;">Target achieved ✅</div>
     <div class="progress-track" style="margin-bottom:16px;"><div class="progress-fill" id="w-bar-water" style="width:0%;background:linear-gradient(90deg,var(--accent2),var(--accent))"></div></div>
-    <div style="font-size:12px;color:var(--muted);margin-bottom:12px;">Each glass = 250ml. Tap to fill, tap again to empty.</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:12px;">Each glass = 250ml. Tap to fill/unfill. Use + for beyond 4L.</div>
+    <!-- Fixed 16-glass grid (4L) -->
     <div class="water-grid" id="water-cups"></div>
-    <div style="font-size:11px;color:var(--dim);margin-top:4px;">Aim 3–3.5L daily while on creatine. You can log beyond the target.</div>
+    <!-- Plus button for beyond 4L -->
+    <div style="display:flex;justify-content:center;margin-top:4px;">
+      <button onclick="addExtraGlass()" style="background:var(--surface2);border:1px solid var(--border2);border-radius:99px;color:var(--accent2);font-size:18px;font-weight:700;width:44px;height:44px;cursor:pointer;touch-action:manipulation;display:flex;align-items:center;justify-content:center;" title="Add 250ml">＋</button>
+    </div>
+    <div style="font-size:11px;color:var(--dim);margin-top:8px;text-align:center;">Aim 3–3.5L daily while on creatine.</div>
   </div>
 </div>
 
@@ -619,6 +632,20 @@ canvas#weightChart{width:100% !important;height:110px !important;}
 </div>
 
 </div>
+<!-- CONSUMED QTY MODAL (for custom foods with baseQty) -->
+<div class="modal-overlay" id="consumed-modal" onclick="closeConsumedModal(event)">
+  <div class="modal-box">
+    <div class="modal-title" id="consumed-modal-title">How much did you have?</div>
+    <div class="modal-sub" id="consumed-modal-sub"></div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;">
+      <input type="number" id="consumed-qty-input" placeholder="e.g. 150" min="0" style="flex:1;font-size:18px;font-weight:700;text-align:center;"/>
+      <div id="consumed-unit-display" style="font-size:16px;color:var(--muted);font-weight:600;min-width:40px;"></div>
+    </div>
+    <div id="consumed-macro-preview" style="font-size:13px;color:var(--muted);text-align:center;margin-bottom:20px;line-height:1.8;min-height:40px;"></div>
+    <button class="btn-primary" onclick="confirmConsumedQty()">Add to log</button>
+  </div>
+</div>
+
 <!-- BROWSE ALL FOODS MODAL -->
 <div class="browse-modal-overlay" id="browse-modal" onclick="closeBrowseModal(event)">
   <div class="browse-modal-box">
@@ -906,101 +933,65 @@ function updateScore(){
   document.getElementById('score-water-pts').textContent=s.waterScore+'/20';
 }
 
-// --- STREAKS ---
-// --- STRICT STREAK SYSTEM ---
-// Streak counts ONLY when BOTH cal >= target AND protein >= target for a day.
-// Called after every meal update. Uses local date to avoid timezone drift.
-function checkAndUpdateStreak(){
-  const t=totals();
-  const todayStr=todayISO(); // local date YYYY-MM-DD
-  const bothMet=t.cal>=TARGETS.cal&&t.pro>=TARGETS.pro;
-
-  if(bothMet){
-    if(allData.lastSuccessDate===todayStr){
-      // Already counted today — do nothing, avoid double increment
-      return;
-    }
-    // Check if yesterday was the last success (consecutive)
-    const yesterday=new Date();
-    yesterday.setDate(yesterday.getDate()-1);
-    const yesterdayStr=dateToISO(yesterday);
-    if(allData.lastSuccessDate===yesterdayStr){
-      allData.streak=(allData.streak||0)+1;
-    } else {
-      // Gap or first time — reset to 1
-      allData.streak=1;
-    }
-    allData.lastSuccessDate=todayStr;
-    save(); // sync streak to Firebase
-  } else if(isToday()&&allData.lastSuccessDate!==todayStr){
-    // Today's goals not met and haven't been met yet today — if streak was from yesterday,
-    // we don't reset yet (day isn't over). Only reset if TODAY they previously had it and now removed.
-    // Safe: streak only resets when we detect a missed day on the NEXT day's first load.
-  }
-}
-
-// Recomputes streak count by scanning all logged days (used for header badge accuracy)
-// Also detects if yesterday was missed and resets streak accordingly
-function recalcStreakFromHistory(){
-  const dates=Object.keys(allData).filter(k=>k.match(/^\d{4}-\d{2}-\d{2}$/)).sort().reverse();
-  let streak=0;
+// --- STREAK SYSTEM (FIX 3) ---
+// Scans ALL past days in allData on every call.
+// A day is SUCCESS only if BOTH cal>=target AND protein>=target.
+// Counts consecutive success days ending at today (or yesterday if today has no data yet).
+// Resets to 0 if today exists and fails, or if there's a gap in the streak.
+function updateStreaks(){
   const todayStr=todayISO();
 
-  // Walk backwards from yesterday (today's data may still be in progress)
-  // If yesterday was missed, reset streak to 0
-  const yesterday=new Date();yesterday.setDate(yesterday.getDate()-1);
-  const yesterdayStr=dateToISO(yesterday);
+  // Collect all date keys that have meal data
+  const allDates=Object.keys(allData)
+    .filter(k=>/^\d{4}-\d{2}-\d{2}$/.test(k)&&allData[k]&&allData[k].meals&&allData[k].meals.length>0)
+    .sort(); // ascending
 
-  // If lastSuccessDate is before yesterday, the streak is broken
-  if(allData.lastSuccessDate&&allData.lastSuccessDate<yesterdayStr){
-    if(allData.streak>0){
-      allData.streak=0;
-      allData.lastSuccessDate='';
-      save();
-    }
+  // Build a Set of SUCCESS days
+  const successDays=new Set();
+  for(const d of allDates){
+    const day=allData[d];
+    const t=day.meals.reduce((a,m)=>({cal:a.cal+m.cal,pro:a.pro+m.pro}),{cal:0,pro:0});
+    if(t.cal>=TARGETS.cal&&t.pro>=TARGETS.pro) successDays.add(d);
   }
 
-  return allData.streak||0;
-}
+  // Walk backwards from today to count consecutive successes
+  let streak=0;
+  const today=new Date();
+  // Start from today; if today has no data yet, we still start from today (streak won't include it)
+  for(let i=0;;i++){
+    const d=new Date(today);
+    d.setDate(today.getDate()-i);
+    const dStr=dateToISO(d);
 
-function updateStreaks(){
-  // First check if today's goals are met and update streak accordingly
-  if(isToday()) checkAndUpdateStreak();
-
-  // Recalc to catch missed days
-  const currentStreak=recalcStreakFromHistory();
-
-  // Update dashboard display
-  const el=document.getElementById('streak-combined');
-  if(el) el.textContent=currentStreak;
-
-  // Update header badge
-  const badge=document.getElementById('header-streak');
-  if(badge) badge.textContent='🔥 '+currentStreak;
-
-  // Today's status cell
-  const t=totals();
-  const bothMet=t.cal>=TARGETS.cal&&t.pro>=TARGETS.pro;
-  const calMet=t.cal>=TARGETS.cal;
-  const proMet=t.pro>=TARGETS.pro;
-  const hasSome=t.cal>0||t.pro>0;
-  const statusEl=document.getElementById('streak-today-status');
-  const subEl=document.getElementById('streak-today-sub');
-  if(statusEl&&subEl){
-    if(!hasSome){
-      statusEl.textContent='—';statusEl.style.color='var(--dim)';
-      subEl.textContent='log meals to count';
-    } else if(bothMet){
-      statusEl.textContent='✅';statusEl.style.color='var(--accent)';
-      subEl.textContent='both targets hit!';
+    if(dStr===todayStr){
+      // Today: only count if it's a success day; if it has data and is NOT success → streak=0
+      const dayData=allData[dStr];
+      const hasMeals=dayData&&dayData.meals&&dayData.meals.length>0;
+      if(hasMeals&&!successDays.has(dStr)){
+        streak=0;
+        break; // today has data and failed → no streak
+      }
+      if(successDays.has(dStr)) streak=1;
+      // if today has no meals yet, don't count it, continue to yesterday
     } else {
-      const missing=[];
-      if(!calMet) missing.push((TARGETS.cal-Math.round(t.cal))+' kcal');
-      if(!proMet) missing.push((TARGETS.pro-Math.round(t.pro))+'g protein');
-      statusEl.textContent='⏳';statusEl.style.color='var(--amber)';
-      subEl.textContent='need '+missing.join(' + ');
+      // Past days: if success, extend streak; if not a success, stop
+      if(successDays.has(dStr)){
+        streak++;
+      } else {
+        break; // gap or failure — stop
+      }
     }
+
+    // Safety cap — don't scan more than 365 days back
+    if(i>=365) break;
   }
+
+  // Persist streak to allData so Firebase syncs it (cheap write, same field)
+  allData.streak=streak;
+
+  // Update header badge (only UI element kept for streak)
+  const badge=document.getElementById('header-streak');
+  if(badge) badge.textContent='🔥 '+streak;
 }
 
 // --- SMART MACRO HIGHLIGHT ---
@@ -1223,21 +1214,111 @@ function removeMeal(i){
   if(editingMealIdx===i)editingMealIdx=-1;
   save();renderAll();
 }
+// State for custom tag chips in Meals tab (separate from Settings selectedTags)
+let customSelectedTags=[];
+function toggleCustomTag(btn){
+  const tag=btn.dataset.tag;
+  if(customSelectedTags.includes(tag)){
+    customSelectedTags=customSelectedTags.filter(t=>t!==tag);
+    btn.style.background='';btn.style.color='';btn.style.borderColor='';
+  } else {
+    customSelectedTags.push(tag);
+    btn.style.background='var(--accent)';btn.style.color='#0f1117';btn.style.borderColor='var(--accent)';
+  }
+}
+function clearCustomTags(){
+  customSelectedTags=[];
+  document.querySelectorAll('.custom-tag-chip').forEach(b=>{b.style.background='';b.style.color='';b.style.borderColor='';});
+}
+
+// Pending custom meal — used when baseQty is set and we need consumed qty first
+let pendingCustomMeal=null;
+
 function addMeal(){
   const name=document.getElementById('f-name').value.trim();if(!name)return;
   const cal=parseFloat(document.getElementById('f-cal').value)||0;
   const pro=parseFloat(document.getElementById('f-pro').value)||0;
   const carb=parseFloat(document.getElementById('f-carb').value)||0;
   const fat=parseFloat(document.getElementById('f-fat').value)||0;
-  // Parse optional tags (comma-separated, trimmed, lowercased)
-  const tagsRaw=document.getElementById('f-tags').value;
-  const tags=tagsRaw?tagsRaw.split(',').map(t=>t.trim().toLowerCase()).filter(Boolean):[];
+  const baseQty=parseFloat(document.getElementById('f-baseqty').value)||0;
+  const unit=document.getElementById('f-unit').value||'g';
+  const tags=[...customSelectedTags];
+
+  if(baseQty>0){
+    // Has a base quantity — ask how much they consumed before logging
+    pendingCustomMeal={name,cal,pro,carb,fat,baseQty,unit,tags};
+    openConsumedModal(name,baseQty,unit,cal,pro,carb,fat);
+    return;
+  }
+
+  // No baseQty — log directly as before
   const meal={name,cal,pro,carb,fat,ts:Date.now()};
   if(tags.length) meal.tags=tags;
   getDayData(currentDate).meals.push(meal);
   addToRecents({id:'custom_'+name.toLowerCase().replace(/\s+/g,'_'),name,cal,pro,carb,fat});
   save();
-  ['f-name','f-cal','f-pro','f-carb','f-fat','f-tags'].forEach(id=>document.getElementById(id).value='');
+  clearCustomFields();
+  vibrate(40);renderAll();showToast(name+' added ✓');
+}
+
+function clearCustomFields(){
+  ['f-name','f-cal','f-pro','f-carb','f-fat','f-baseqty'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  clearCustomTags();
+}
+
+// --- CONSUMED QTY MODAL (FIX 4) ---
+function openConsumedModal(name,baseQty,unit,cal,pro,carb,fat){
+  document.getElementById('consumed-modal-title').textContent=name;
+  document.getElementById('consumed-modal-sub').textContent=`Macros defined per ${baseQty}${unit}. Enter how much you had.`;
+  document.getElementById('consumed-unit-display').textContent=unit;
+  document.getElementById('consumed-qty-input').value='';
+  document.getElementById('consumed-macro-preview').textContent='Enter quantity to see macros';
+  // Live macro preview as user types
+  const inp=document.getElementById('consumed-qty-input');
+  inp.oninput=function(){
+    const consumed=parseFloat(this.value)||0;
+    if(consumed>0&&baseQty>0){
+      const mult=consumed/baseQty;
+      const pCal=Math.round(cal*mult),pPro=(pro*mult).toFixed(1),pCarb=(carb*mult).toFixed(1),pFat=(fat*mult).toFixed(1);
+      document.getElementById('consumed-macro-preview').innerHTML=`<b style="color:var(--text);font-size:16px;">${pCal} kcal</b><br>${pPro}g protein · ${pCarb}g carbs · ${pFat}g fat`;
+    } else {
+      document.getElementById('consumed-macro-preview').textContent='Enter quantity to see macros';
+    }
+  };
+  document.getElementById('consumed-modal').classList.add('open');
+}
+
+function closeConsumedModal(e){
+  if(!e||e.target===document.getElementById('consumed-modal')){
+    document.getElementById('consumed-modal').classList.remove('open');
+    pendingCustomMeal=null;
+  }
+}
+
+function confirmConsumedQty(){
+  if(!pendingCustomMeal)return;
+  const consumed=parseFloat(document.getElementById('consumed-qty-input').value);
+  if(!consumed||consumed<=0){showToast('Enter a valid quantity');return;}
+  const {name,cal,pro,carb,fat,baseQty,unit,tags}=pendingCustomMeal;
+  const mult=consumed/baseQty;
+  const meal={
+    name:`${name} (${consumed}${unit})`,
+    cal:+(cal*mult).toFixed(1),
+    pro:+(pro*mult).toFixed(1),
+    carb:+(carb*mult).toFixed(1),
+    fat:+(fat*mult).toFixed(1),
+    ts:Date.now(),
+    // Store base for re-editing quantity later
+    basecal:cal,basepro:pro,basecarb:carb,basefat:fat,
+    baseName:name,baseQty,unit,qty:mult
+  };
+  if(tags&&tags.length) meal.tags=tags;
+  getDayData(currentDate).meals.push(meal);
+  addToRecents({id:'custom_'+name.toLowerCase().replace(/\s+/g,'_'),name,cal,pro,carb,fat,unit:`per ${baseQty}${unit}`});
+  save();
+  document.getElementById('consumed-modal').classList.remove('open');
+  pendingCustomMeal=null;
+  clearCustomFields();
   vibrate(40);renderAll();showToast(name+' added ✓');
 }
 
@@ -1251,13 +1332,16 @@ function saveFoodToLibrary(){
   const pro=parseFloat(document.getElementById('f-pro').value)||0;
   const carb=parseFloat(document.getElementById('f-carb').value)||0;
   const fat=parseFloat(document.getElementById('f-fat').value)||0;
-  // Parse tags from the shared f-tags field
-  const tagsRaw=document.getElementById('f-tags').value;
-  const tags=tagsRaw?tagsRaw.split(',').map(t=>t.trim().toLowerCase()).filter(Boolean):[];
-  FOODS.push({id:genId(),name,cal,pro,carb,fat,unit:'custom',tags});
+  const baseQty=parseFloat(document.getElementById('f-baseqty').value)||0;
+  const unit=document.getElementById('f-unit').value||'g';
+  const tags=[...customSelectedTags];
+  const unitLabel=baseQty>0?`${baseQty}${unit}`:'custom';
+  const food={id:genId(),name,cal,pro,carb,fat,unit:unitLabel,tags};
+  if(baseQty>0){food.baseQty=baseQty;food.unit=unit;}
+  FOODS.push(food);
   save();
   renderChips();
-  ['f-name','f-cal','f-pro','f-carb','f-fat','f-tags'].forEach(id=>document.getElementById(id).value='');
+  clearCustomFields();
   vibrate(30);
   showToast('Saved to library ✓');
 }
@@ -1351,25 +1435,38 @@ function glassSVG(filled){return `<svg class="glass-svg" width="32" height="38" 
 function renderWater(){
   const d=getDayData(currentDate);
   const liters=(d.water*WATER_ML).toFixed(1);
-  const targetL=TARGETS.water*WATER_ML; // default 3.5L
-  const achieved=d.water*WATER_ML>=targetL;
+  const targetL=(TARGETS.water*WATER_ML).toFixed(1);
+  const achieved=d.water*WATER_ML>=TARGETS.water*WATER_ML;
   document.getElementById('w-stat').textContent=liters+'L';
-  // Bar fills to 100% at target; stays full if exceeded (do not overflow)
+  const tl=document.getElementById('w-target-lbl');
+  if(tl) tl.textContent=targetL;
+  // Bar fills to 100% at target; capped — does NOT overflow
   document.getElementById('w-bar-water').style.width=Math.min(100,Math.round((d.water/TARGETS.water)*100))+'%';
-  // Target achieved badge
+  // Achieved badge
   const ach=document.getElementById('w-achieved');
   if(ach) ach.style.display=achieved?'block':'none';
-  // Target label
-  const tl=document.getElementById('w-target-lbl');
-  if(tl) tl.textContent=targetL.toFixed(1);
-  // Render glasses — always show enough glasses to log beyond target (20 = 5L)
-  const GLASS_COUNT=20;
-  document.getElementById('water-cups').innerHTML=Array.from({length:GLASS_COUNT},(_,i)=>`<div class="glass-wrap" onclick="toggleCup(${i})">${glassSVG(i<d.water)}<div class="glass-lbl">${((i+1)*250)}ml</div></div>`).join('');
+  // Fixed 16-glass grid (4L). Glasses beyond 16 are just counted numerically, not shown.
+  const FIXED=16;
+  let html='';
+  for(let i=0;i<FIXED;i++){
+    const filled=i<d.water;
+    html+=`<div class="glass-wrap" onclick="toggleCup(${i})">${glassSVG(filled)}<div class="glass-lbl">${(i+1)*250}ml</div></div>`;
+  }
+  document.getElementById('water-cups').innerHTML=html;
 }
 function toggleCup(i){
   const d=getDayData(currentDate);
-  // Toggle: if clicking a filled glass, unfill from there; if clicking empty, fill up to there
   d.water=i<d.water?i:i+1;
+  if(d.water>0)lastWaterAlertTime=Date.now();
+  save();renderWater();vibrate(20);
+  document.getElementById('d-water-ring').textContent=(d.water*WATER_ML).toFixed(1)+'L';
+  updateScore();
+  if(d.water>0)document.getElementById('alert-water-reminder').classList.remove('show');
+}
+// "+" button — adds 1 glass beyond whatever current count is (works above 16)
+function addExtraGlass(){
+  const d=getDayData(currentDate);
+  d.water=(d.water||0)+1;
   if(d.water>0)lastWaterAlertTime=Date.now();
   save();renderWater();vibrate(20);
   document.getElementById('d-water-ring').textContent=(d.water*WATER_ML).toFixed(1)+'L';
